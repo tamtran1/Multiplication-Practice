@@ -35,6 +35,7 @@ public class MultPrac extends JFrame {
 	JPanel leftPanel, centerPanel, rightPanel, resultPanel;
 	JLabel operand, answer, feedback, resultContent;
 	JScrollPane resultScrollPane;
+	JProgressBar progressBar;
 	LinkedList<Card> deck;	
 	Iterator<Card> deckIterator;
 	Card tmpCard;
@@ -76,7 +77,7 @@ public class MultPrac extends JFrame {
 	
 	/*initialize all frames and panels for user interface*/
 	private void initUI() {
-		frame = new JFrame("multTest");
+		frame = new JFrame("Multiplication Practice");
 		
 		leftPanel = new JPanel();
 		leftPanel.setBackground(Color.WHITE);
@@ -92,7 +93,7 @@ public class MultPrac extends JFrame {
 		
 		resultPanel = new JPanel();
 		resultPanel.setBackground(Color.WHITE);
-		resultPanel.setPreferredSize(new Dimension (500, 1100)); //adjust ver size to accomodate more results
+		resultPanel.setPreferredSize(new Dimension (550, 1100)); //adjust ver size to accomodate more results
 		
 		operand = new JLabel("", JLabel.CENTER);
 		operand.setFont(new Font("Arial", Font.BOLD, 60));
@@ -110,12 +111,16 @@ public class MultPrac extends JFrame {
 		resultContent.setFont(new Font("Arial", Font.PLAIN, 24));
 		resultContent.setForeground(Color.BLACK);
 		
+		progressBar = new JProgressBar ();
+		progressBar.setPreferredSize(new Dimension (620, 4));
+		progressBar.setForeground (Color.RED);
+		progressBar.setBorderPainted(false);
+		progressBar.setMinimum (0);
+		progressBar.setMaximum ((int)numOfProblem);
+		
 		resultPanel.add(resultContent);
 		
-		resultScrollPane = new JScrollPane(resultPanel, 
-			JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, 
-			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		
+		resultScrollPane = new JScrollPane(resultPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		resultScrollPane.setViewportView(resultPanel); //must specify this for scroll pane to work
 		resultScrollPane.setPreferredSize(new Dimension (550, 500));
 		
@@ -126,6 +131,7 @@ public class MultPrac extends JFrame {
 		frame.add(leftPanel, BorderLayout.WEST);
 		frame.add(centerPanel, BorderLayout.CENTER);
 		frame.add(rightPanel, BorderLayout.EAST);
+		frame.add(progressBar, BorderLayout.SOUTH);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -134,6 +140,7 @@ public class MultPrac extends JFrame {
 	
 	/*listen for key input and update as necessary*/
 	private void run() {
+		progressBar.setValue(cardCntr + 1); //update the progress bar
 		tmpCard = deck.get(cardCntr);
 		operand.setText(tmpCard.a + " x " + tmpCard.b + " =");
 		startTime = System.currentTimeMillis(); //start the timer
@@ -163,10 +170,11 @@ public class MultPrac extends JFrame {
 					tmpCard.feedback = (ans != "" && Integer.parseInt(ans) == tmpCard.c) ? "Correct" : "Wrong";
 					if (deck.indexOf(tmpCard) == numOfProblem - 1) //stop after some number of problems
 						result();
-					++cardCntr;
-					tmpCard = deck.get(cardCntr);
+					++cardCntr; //update the problem counter
+					tmpCard = deck.get(cardCntr); //get the next from problem in list
+					progressBar.setValue(cardCntr + 1); //update the progress bar
 					operand.setText(tmpCard.a + " x " + tmpCard.b + " =");
-					ans = "";
+					ans = ""; //reset the answer field
 				}
 				
 				answer.setText(ans);
@@ -194,31 +202,35 @@ public class MultPrac extends JFrame {
 	private void result() {
 		endTime = System.currentTimeMillis();
 		String totalTime = calcTime(endTime - startTime);
-		String resultTxt = "<html>";
+		String resultTxt = "<html>", solvedProblemsTxt = "";
+		
 		correctAns = numOfProblem; //assuming all ans is correct, then deduct from number of Wrong 
 		
 		for (int i = 0; i < numOfProblem; ++i) {
-			resultTxt += deck.get(i).a + " x " + deck.get(i).b + " = " +
-						 deck.get(i).response +
-						 " : " + deck.get(i).feedback;
+			solvedProblemsTxt += (i + 1) + ". " +
+								 deck.get(i).a + " x " + deck.get(i).b + " = " +
+								 deck.get(i).response +
+								 " : " + deck.get(i).feedback;
 			if (deck.get(i).feedback == "Wrong") {
-				resultTxt += " : Correct Answer is " + deck.get(i).c + "<br>";
-				--correctAns;
+				solvedProblemsTxt += " : Correct Answer is " + deck.get(i).c + "<br>";
+				--correctAns; //deduct points for each wrong answer
 			} else
-				resultTxt += "<br>";
+				solvedProblemsTxt += "<br>";
 		}
 		
-		resultTxt += "--------------------------------------<br>";
+		resultTxt += "Total Score " + String.format("%.0f%%", (100 * correctAns)/numOfProblem) + "<br>";
+		resultTxt += "Time spent" + totalTime + "<br>";
 		resultTxt += "Total problems " + numOfProblem + "<br>";
 		resultTxt += "Total correct " + correctAns + "<br>";
-		resultTxt += "Total time " + totalTime + "<br>";
-		resultTxt += "Your score " + String.format("%.0f%%", (100 * correctAns)/numOfProblem) + "<br></html>";
+		resultTxt += "--------------------------------------<br>";
+		resultTxt += solvedProblemsTxt + "</html>";
 		
 		resultContent.setText(resultTxt);
 		
 		frame.remove(leftPanel);
 		frame.remove(centerPanel);
 		frame.remove(rightPanel);
+		frame.remove(progressBar);
 		frame.add(resultScrollPane);
 		frame.pack();
 		frame.setLocationRelativeTo(null);		
